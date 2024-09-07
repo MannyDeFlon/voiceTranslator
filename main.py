@@ -8,8 +8,20 @@ import os
 
 load = load_dotenv()
 
-elevens_api_key = os.getenv("ELEVENLABS_API_KEY")
-save_file_path = "audio.mp3"
+ELEVENS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+
+languages_dict = {"English": "en", 
+                  "Spanish": "es", 
+                  "French": "fr", 
+                  "German": "de", 
+                  "Italian": "it", 
+                  "Japanese": "ja", 
+                  "Korean": "ko", 
+                  "Portuguese": "pt", 
+                  "Russian": "ru", 
+                  "Chinese": "zh"}
+
+whisper_model = "base" # base es el modelo mas pequeño, small es otra opcion
 
 
 def voice_translator(audio_file : str, to_lang : str = "en") -> str:
@@ -24,37 +36,38 @@ def voice_translator(audio_file : str, to_lang : str = "en") -> str:
 
     # transcribir audio
     try:
-        model = whisper.load_model("base")  # base es el modelo mas pequeño, small es otra opcion
+        model = whisper.load_model(whisper_model)
         result = model.transcribe(audio_file, language="Spanish", fp16=False)
         transcription = result["text"]
     except Exception as e:
         gr.Error(f"Hubo un error al transcribir el audio: {str(e)}")
+        print(f"Hubo un error al transcribir el audio: {str(e)}")
+    # TODO: add transcription writing to file
 
     # traducir texto
     try:
-        en_translation = Translator(from_lang="es", to_lang="en").translate(transcription)
-        fr_translation = Translator(from_lang="es", to_lang="fr").translate(transcription)
-
-
+        translation = Translator(from_lang="es", to_lang=languages_dict[to_lang]).translate(transcription)
     except Exception as e:
         gr.Error(f"Hubo un error al traducir el texto: {str(e)}")
+        print(f"Hubo un error al traducir el texto: {str(e)}")
+    # TODO: add translation writing to file
 
     # generar audio
     try: 
-        text_to_speech(en_translation, language="en")
+        audio = text_to_speech(translation, language=to_lang)
 
     except Exception as e:
         gr.Error(f"Hubo un error al generar el audio: {str(e)}")
         print(f"Hubo un error al generar el audio: {str(e)}")
 
-    return save_file_path  
+    return audio  
 
 def text_to_speech(text: str, language: str = "en") -> str:
     """
     Convert text to speech and save it to a file. Returns path to the saved file.
     """
 
-    client = ElevenLabs()
+    client = ElevenLabs(api_key=ELEVENS_API_KEY)
 
     response = client.text_to_speech.convert(text=text,
                                             voice_id="pNInz6obpgDQGcFmaJgB",  # Adam
@@ -74,7 +87,8 @@ def text_to_speech(text: str, language: str = "en") -> str:
 
 web = gr.Interface(
                    fn=voice_translator,
-                   inputs=gr.Audio(sources=["microphone"], type="filepath"),
+                   inputs=[gr.Audio(sources=["microphone"], type="filepath"), 
+                           gr.Dropdown(label="Language to", choices=languages_dict.keys())],
                    outputs=gr.Audio(),
                    title="Voice Translator",
                    description="Translate voice from different lenguages in real time."
