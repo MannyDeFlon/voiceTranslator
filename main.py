@@ -9,6 +9,8 @@ import os
 load = load_dotenv()
 
 elevens_api_key = os.getenv("ELEVENLABS_API_KEY")
+save_file_path = "audio.mp3"
+
 
 def voice_translator(audio_file):
 
@@ -19,8 +21,6 @@ def voice_translator(audio_file):
         transcription = result["text"]
     except Exception as e:
         gr.Error(f"Hubo un error al transcribir el audio: {str(e)}")
-    
-    print("The transcribed text is: ", transcription)
 
     # traducir texto
     try:
@@ -29,19 +29,26 @@ def voice_translator(audio_file):
     except Exception as e:
         gr.Error(f"Hubo un error al traducir el texto: {str(e)}")
 
-    print("The translation is: ", en_translation)
-
     # generar audio
     try: 
-        client = ElevenLabs(elevens_api_key)
-        audio = client.text_to_speech.convert(text=en_translation,
-                                voice="Rachel",
-                                model="eleven_monolingual_v2")
+        client = ElevenLabs(api_key="sk_36653306404c3d97c5107a850325db9d2b6fb5675a91ca37")
+        print("Apoco si mailove")
+        response = client.text_to_speech.convert(text=en_translation,
+                                              voice_id="pNInz6obpgDQGcFmaJgB",  # Adam
+                                              optimize_streaming_latency="0",
+                                              output_format="mp3_22050_32",
+                                              model_id="eleven_multilingual_v2")
+        
+        with open(save_file_path, "wb") as f:
+            for chunk in response:
+                if chunk:
+                    f.write(chunk)
+
     except Exception as e:
         gr.Error(f"Hubo un error al generar el audio: {str(e)}")
+        print(f"Hubo un error al generar el audio: {str(e)}")
 
-    return audio
-
+    return save_file_path  
 
 
 web = gr.Interface(
