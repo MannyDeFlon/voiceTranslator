@@ -21,24 +21,44 @@ languages_dict = {"English": "en",
                   "Russian": "ru", 
                   "Chinese": "zh"}
 
+choices = [
+          "Select a language",
+          "English", 
+          "Spanish", 
+          "French", 
+          "German", 
+          "Italian", 
+          "Japanese", 
+          "Korean",
+          "Portuguese",
+          "Russian",
+          "Chinese"]
+
 whisper_model = "base" # base es el modelo mas pequeño, small es otra opcion
 
 
-def voice_translator(audio_file : str, to_lang : str = "en") -> str:
+def voice_translator(audio_file : str, to_lang : str, from_lang : str) -> str:
     """
     Translate voice from different lenguages in real time.
 
     audio_file: path to the audio file
     to_lang: language to translate to
+    from_lang: language to translate from
+
 
     returns: path to the saved file
     """
 
+    if to_lang == "Selecta a language" or from_lang == "Selecta a language":
+        raise TypeError
+
     # transcribir audio
     try:
         model = whisper.load_model(whisper_model)
-        result = model.transcribe(audio_file, language="Spanish", fp16=False)
+        print(from_lang, to_lang)
+        result = model.transcribe(audio_file, language=from_lang, fp16=False)
         transcription = result["text"]
+        print("transcription:", transcription)
     except Exception as e:
         gr.Error(f"Hubo un error al transcribir el audio: {str(e)}")
         print(f"Hubo un error al transcribir el audio: {str(e)}")
@@ -46,7 +66,8 @@ def voice_translator(audio_file : str, to_lang : str = "en") -> str:
 
     # traducir texto
     try:
-        translation = Translator(from_lang="es", to_lang=languages_dict[to_lang]).translate(transcription)
+        translation = Translator(from_lang=languages_dict[from_lang],
+                                 to_lang=languages_dict[to_lang]).translate(transcription)
     except Exception as e:
         gr.Error(f"Hubo un error al traducir el texto: {str(e)}")
         print(f"Hubo un error al traducir el texto: {str(e)}")
@@ -88,7 +109,14 @@ def text_to_speech(text: str, language: str = "en") -> str:
 web = gr.Interface(
                    fn=voice_translator,
                    inputs=[gr.Audio(sources=["microphone"], type="filepath"), 
-                           gr.Dropdown(label="Language to", choices=languages_dict.keys())],
+                           gr.Dropdown(label="Language to",
+                                       value="Select a language",
+                                       choices=choices,
+                                       filterable=True),
+                           gr.Dropdown(label="Language from",
+                                       value="Select a language",
+                                       choices=choices,
+                                       filterable=True)],
                    outputs=gr.Audio(),
                    title="Voice Translator",
                    description="Translate voice from different lenguages in real time."
