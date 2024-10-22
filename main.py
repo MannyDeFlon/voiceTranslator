@@ -7,9 +7,7 @@ import os
 
 
 load = load_dotenv()
-
 ELEVENS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-
 languages_dict = {"English": "en", 
                   "Spanish": "es", 
                   "French": "fr", 
@@ -20,7 +18,6 @@ languages_dict = {"English": "en",
                   "Portuguese": "pt", 
                   "Russian": "ru", 
                   "Chinese": "zh"}
-
 choices = [
           "Select a language",
           "English", 
@@ -33,11 +30,10 @@ choices = [
           "Portuguese",
           "Russian",
           "Chinese"]
-
 whisper_model = "base" # base es el modelo mas pequeño, small es otra opcion
 
 
-def voice_translator(audio_file : str, to_lang : str, from_lang : str) -> str:
+def voice_translator(audio_file : str, from_lang : str, to_lang : str) -> str:
     """
     Translate voice from different lenguages in real time.
 
@@ -55,10 +51,8 @@ def voice_translator(audio_file : str, to_lang : str, from_lang : str) -> str:
     # transcribir audio
     try:
         model = whisper.load_model(whisper_model)
-        print(from_lang, to_lang)
         result = model.transcribe(audio_file, language=from_lang, fp16=False)
         transcription = result["text"]
-        print("transcription:", transcription)
     except Exception as e:
         gr.Error(f"Hubo un error al transcribir el audio: {str(e)}")
         print(f"Hubo un error al transcribir el audio: {str(e)}")
@@ -109,11 +103,11 @@ def text_to_speech(text: str, language: str = "en") -> str:
 web = gr.Interface(
                    fn=voice_translator,
                    inputs=[gr.Audio(sources=["microphone"], type="filepath"), 
-                           gr.Dropdown(label="Language to",
+                           gr.Dropdown(label="Language from",
                                        value="Select a language",
                                        choices=choices,
                                        filterable=True),
-                           gr.Dropdown(label="Language from",
+                           gr.Dropdown(label="Language to",
                                        value="Select a language",
                                        choices=choices,
                                        filterable=True)],
